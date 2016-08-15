@@ -1,0 +1,109 @@
+---
+title: "Breast Cancer"
+author: "Durga Gaddam"
+date: "August 12, 2016"
+output: pdf_document
+---
+
+### Objective:
+The current objective of the article is to Use Machine Learning concept of Supervised Learing and one of the Algorithm form of KNN- k Nearest Neighbour to automate the identification of cancerous cells.
+
+The Data used has been extracted from Wisconsin Breast Cancer Diagonistic  dataset 
+
+
+### Concept of K-Nearest Neighbour Algorithm:
+
+Algorithm is a sequence of procedures or rules given to a computer, when followed guarantees the result
+
+In KNN algorithm, the data is divided into groups according to the scores given. To estimate the required target group, distance from each group is calculated and the nearest neighbour group is selected with additional conditions.
+
+#### Step-1: Collecting the Data
+#### Step-2: Exploring and Preparing the data
+#### Step-3: Training a model on the data
+#### Step-4: Evaluating model performance
+#### Step-5: Improving model perfomance
+
+
+### STEP-1 and STEP-2 Loading and Understanding/preparing the data
+
+The dataset consists of 32 columns and 568 observations (patient details)
+```{r}
+###install.packages("class")
+###install.packages("gmodels")
+###library(class)
+###library(gmodels)
+
+
+bcdata <- read.csv("F:/R PRACTICE/Breast Cancer/Breastcancerdata.csv", stringsAsFactors = FALSE)
+
+names(bcdata)
+
+```
+
+The First column is ID of the cell and is of no use for understanding and using in Machine learning. We need to remove ID column to avoid overfitting. 
+
+The second column indicates the result of Diagonsis as "M" for Malignent and "B" for Benign. This data is a categorical data and should be converted into nominal data.
+
+```{r}
+str(bcdata)
+bcdata <- bcdata[-1]
+table(bcdata$Diagnosis)
+plot(table(bcdata$Diagnosis), xlab = " Diagonistic data", ylab = " Frequency")
+
+## converting the Diagnosis data into factors
+
+bcdata$Diagnosis <- factor(bcdata$Diagnosis, levels=c("B","M"), labels = c("Benign", "Malignant")) 
+
+
+```
+Calculating the proprotions of each result
+
+```{r}
+round(prop.table(table(bcdata$Diagnosis))*100, digits=1)
+
+summary(bcdata[c("Radius_Mean", "Area_Mean", "Smoothness_Mean")])
+
+``` 
+The range of area is 2501-143.5= 2357.5 which is abnormal, this can be rectified by normalizing the data.
+
+###Normalization
+```{r}
+nd <- function(x){
+  
+  return((x-min(x))/(max(x)-min(x)))
+}
+
+### Applying the function to 31 columns of the dataset excluding Diagnosis column
+bcdata_n <- as.data.frame(lapply(bcdata[2:31],nd))
+
+summary(bcdata_n$Area_Mean)
+
+### Now we can see that data is normalized and the range interval of area is 0 to 1
+
+### we now divide the data into 469 and 100 records to predict the last 100 records 
+
+bcdata_train <- bcdata_n[1:469,]
+bcdata_test <- bcdata_n[470:569,]
+
+### As we have excluded the Diagonsis column from normalized data, we need to store that column in new variables
+
+bcdata_train_labels <- bcdata[1:469,1]
+bcdata_test_labels <- bcdata[470:569,1]
+
+
+```
+### STEP-3 TRAINING THE DATA MODEL
+
+```{r}
+require(class)
+bcdata_pred <- knn(train=bcdata_train,test=bcdata_test,cl=bcdata_train_labels,k=21)
+```
+### STEP-4 EVALUATING MODEL PERFORMANCE
+
+```{r}
+require(gmodels)
+CrossTable(x=bcdata_test_labels,y=bcdata_pred,prop.chisq = FALSE)
+```
+### STEP-5 IMPROVING THE MODEL
+
+The model can be improved by using different K values and using z-scores instead of normalization.
